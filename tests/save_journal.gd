@@ -30,8 +30,16 @@ func _ready() -> void:
 		get_tree().quit(failures)
 		return
 	if "verify" in args:
+		await get_tree().process_frame
 		check(Journal.entries().is_empty(), "Fresh process starts empty")
-		check(GameState.load_game(), "Fresh process loads disk save")
+		var menu := preload("res://scenes/main_menu.tscn").instantiate()
+		get_tree().root.add_child(menu)
+		# Keep this test harness alive while Continue replaces the title scene.
+		get_tree().current_scene = menu
+		menu._on_continue()
+		await get_tree().process_frame
+		await get_tree().process_frame
+		check(get_tree().current_scene != null and get_tree().current_scene.scene_file_path == GameState.DEFAULT_SCENE, "Continue loads the saved gameplay scene")
 		check(Journal.entries() == ["keeper_log", "unknown_future_entry"], "Cold-process journal restore")
 		check(GameState.flags.has("trusted_edith") and GameState.get_flag("trusted_edith") == false and GameState.get_flag("radioed_tom") == true, "Cold-process flags restore")
 		print("Cold-process save/Continue: %s" % ("PASS" if failures == 0 else "FAIL"))
@@ -58,6 +66,7 @@ func _ready() -> void:
 	GameState.new_game()
 	check(Journal.entries().is_empty() and GameState.flags.is_empty(), "New Game resets journal and flags")
 	check(GameState.has_save(), "New Game preserves disk save until explicitly saved")
+	Journal.discover("stale_unsaved_entry")
 	var before := added
 	check(GameState.load_game(), "v2 reload succeeds")
 	check(Journal.entries() == ["keeper_log", "future_entry"], "Journal order survives")
@@ -67,11 +76,12 @@ func _ready() -> void:
 	check(Journal.entries().size() == 2, "Repeated load replaces rather than appends")
 	check(GameState.save_game(), "Atomic replacement of existing save succeeds")
 
-	for legacy in [{"version": 1, "flags": story}, {"flags": story}]:
+	for legacy in [{"version": 1, "scene": "res://scenes/lamp_room.tscn", "flags": story}, {"version": 1, "flags": story}, {"flags": story}]:
+		Journal.discover("stale_before_legacy")
 		write_save(legacy)
 		check(GameState.load_game(), "Legacy save loads")
 		check(GameState.flags == story and Journal.entries().is_empty(), "Legacy load preserves flags and clears stale journal")
-		check(GameState.current_scene == GameState.DEFAULT_SCENE, "Legacy missing scene defaults")
+		check(GameState.current_scene == legacy.get("scene", GameState.DEFAULT_SCENE), "Legacy saved scene preserved or missing scene defaults")
 		check(GameState.save_game(), "Legacy save upgrades")
 		check(GameState.load_game(), "Upgraded legacy save reloads")
 
