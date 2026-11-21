@@ -54,6 +54,7 @@ func choose(index: int) -> void:
 		return
 	var choice: Dictionary = choices[index]
 	_apply_flags(choice.get("set_flag", {}))
+	_apply_journal(choice.get("discover_entry", null))
 	var next: Variant = choice.get("next", null)
 	if next == null:
 		_finish()
@@ -69,6 +70,7 @@ func _goto(id: String) -> void:
 	_current_id = id
 	var node: Dictionary = _graph[id]
 	_apply_flags(node.get("set_flag", {}))
+	_apply_journal(node.get("discover_entry", null))
 	line_shown.emit(
 		str(node.get("speaker", "")),
 		str(node.get("text", "")),
@@ -79,6 +81,12 @@ func _goto(id: String) -> void:
 func _apply_flags(dict: Dictionary) -> void:
 	for key in dict:
 		GameState.set_flag(str(key), dict[key])
+
+
+## Explicit discovery metadata is independent of story-flag names and values.
+func _apply_journal(id: Variant) -> void:
+	if id is String:
+		Journal.discover(id)
 
 
 func _finish() -> void:

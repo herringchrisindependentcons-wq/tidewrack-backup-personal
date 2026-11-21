@@ -91,14 +91,14 @@ Any node can set story flags via `"set_flag"`, which `GameState` persists.
 # Validate every dialogue graph (targets resolve, has an ending, no orphans)
 python3 tests/validate_dialogue.py
 
-# In-engine checks (requires Godot on PATH)
-godot --headless --path . --check-only   # parse all scripts
+# In-engine persistence checks (Linux; isolated save directory)
+bash tests/run_save_journal.sh
 ```
 
-> The GDScript in this build was authored without a local Godot install, so it
-> has been checked statically and via the dialogue validator, **not** yet run in
-> the engine. First engine open may surface minor fixups — tracked in the issue
-> list.
+> Journal/save regression tests and project import pass in Godot 4.7.2.
+> Exported-platform and Godot 4.3 checks remain outstanding. See
+> [`docs/journal-save-review.md`](docs/journal-save-review.md) for the persistence
+> contract and remaining launch checks.
 
 ## Steam Next Fest demo
 
