@@ -64,6 +64,9 @@ def validate_file(path: Path) -> tuple[list[str], list[str]]:
             errors.append(f"{path.name}:{nid}: node must be an object")
             continue
 
+        if "discover_entry" in node and (not isinstance(node["discover_entry"], str) or not node["discover_entry"].strip()):
+            errors.append(f"{path.name}:{nid}: discover_entry must be a nonblank string")
+
         has_choices = isinstance(node.get("choices"), list) and len(node["choices"]) > 0
         has_next = "next" in node
 
@@ -83,6 +86,8 @@ def validate_file(path: Path) -> tuple[list[str], list[str]]:
                 if not isinstance(choice, dict) or "text" not in choice:
                     errors.append(f"{path.name}:{nid}: choice #{i} needs a 'text' field")
                     continue
+                if "discover_entry" in choice and (not isinstance(choice["discover_entry"], str) or not choice["discover_entry"].strip()):
+                    errors.append(f"{path.name}:{nid}: choice #{i} discover_entry must be a nonblank string")
                 target = choice.get("next")
                 if target is not None and (not isinstance(target, str) or target not in graph):
                     errors.append(f"{path.name}:{nid}: choice #{i} 'next' -> missing node '{target}'")
